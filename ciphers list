@@ -1,0 +1,16 @@
+local openssl_cipher = require("resty.openssl.cipher")
+
+local function list_ciphers()
+    local ciphers = openssl_cipher.list() -- Fetch the list of available ciphers
+    if ciphers then
+        print("Available OpenSSL Ciphers:")
+        for _, cipher in ipairs(ciphers) do
+            print(cipher)
+        end
+    else
+        print("Failed to fetch the cipher list.")
+    end
+end
+
+-- Execute the function
+list_ciphers()
