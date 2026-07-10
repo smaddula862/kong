@@ -1,0 +1,30 @@
+# -----------------------------------------------------------------------------
+# WEST overrides — apigee-datastore (Cassandra)
+#
+# West is the SECOND region. It JOINS the existing East ring by pointing
+# multiRegionSeedHost at a reachable East Cassandra seed address. It advertises
+# as datacenter "dc-west". After it is up and streaming, keyspace replication
+# is expanded to {dc-east:3, dc-west:3} and a `nodetool rebuild dc-east` is run
+# on the West nodes to pull a full copy (see dr-runbook.md, "Add second region").
+# -----------------------------------------------------------------------------
+gcp:
+  region: us-west1
+k8sCluster:
+  name: ocp-west
+  region: us-west-1
+
+cassandra:
+  datacenter: dc-west
+  rack: ra-1
+
+  # Reachable East seed address (pod IP behind an inter-DC route/VPN, or the
+  # East Cassandra seed Service exposed over the private interconnect). This is
+  # THE value that stitches the two regions into one ring.
+  multiRegionSeedHost: "cassandra-east-seed.apigee.svc.dc-east.internal"
+
+  storage:
+    storageClass: ocs-storagecluster-ceph-rbd
+    capacity: 500Gi
+
+  nodeSelector:
+    topology.kubernetes.io/region: us-west-1

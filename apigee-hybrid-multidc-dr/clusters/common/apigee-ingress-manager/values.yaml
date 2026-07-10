@@ -1,0 +1,19 @@
+# apigee-ingress-manager (Envoy-based ingress controller) — COMMON values.
+gcp:
+  projectID: "my-apigee-project"
+org: "my-apigee-project"
+namespace: apigee
+
+ingressGateways:
+  - name: apigee-ingress
+    replicaCountMin: 2
+    replicaCountMax: 6
+    # On OpenShift the ingress is fronted by a per-region LoadBalancer Service;
+    # the two regional VIPs sit behind a global DNS/GSLB (see docs). Service
+    # type is set per-DC so each region can pin its own LB annotations.
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        memory: 1Gi

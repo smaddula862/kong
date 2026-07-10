@@ -1,0 +1,15 @@
+# WEST overrides — apigee-ingress-manager
+gcp:
+  region: us-west1
+k8sCluster:
+  name: ocp-west
+  region: us-west-1
+
+ingressGateways:
+  - name: apigee-ingress
+    svcType: LoadBalancer
+    svcAnnotations:
+      # West regional load balancer. Registered in the global DNS/GSLB record
+      # for api.example.com with a standby (lower/zero) weight until failover.
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      external-dns.alpha.kubernetes.io/hostname: api-west.example.com

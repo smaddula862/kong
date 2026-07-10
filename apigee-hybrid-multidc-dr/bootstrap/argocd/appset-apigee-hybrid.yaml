@@ -1,0 +1,105 @@
+# -----------------------------------------------------------------------------
+# Apigee hybrid component ApplicationSet.
+#
+# A matrix generator produces one ArgoCD Application per (data center x Apigee
+# Helm chart). ArgoCD sync waves enforce the mandatory install ordering that
+# `apigeectl`/Helm require:
+#
+#   wave 1  apigee-operator        (CRDs + controller)
+#   wave 2  apigee-datastore       (Cassandra; multi-region seed)
+#   wave 3  apigee-telemetry       (metrics/logs)
+#   wave 3  apigee-redis           (quota/PDX cache)
+#   wave 4  apigee-ingress-manager (envoy/ingress controller)
+#   wave 5  apigee-org             (org-scoped runtime: MART, watcher, ...)
+#   wave 6  apigee-env             (message processors / synchronizer)
+#   wave 7  apigee-virtualhost     (routing + TLS termination)
+#
+# Each Application is a multi-source app: the chart comes from Apigee's OCI
+# registry, the values come from this git repo (common + per-DC override).
+# -----------------------------------------------------------------------------
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: apigee-hybrid
+  namespace: openshift-gitops
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          # --- Data centers (spoke clusters registered as ArgoCD clusters) ---
+          - clusters:
+              selector:
+                matchExpressions:
+                  - key: apigee.dc
+                    operator: In
+                    values: ["east", "west"]
+          # --- Apigee hybrid Helm charts + their install order ---
+          - list:
+              elements:
+                - component: apigee-operator
+                  wave: "1"
+                - component: apigee-datastore
+                  wave: "2"
+                - component: apigee-telemetry
+                  wave: "3"
+                - component: apigee-redis
+                  wave: "3"
+                - component: apigee-ingress-manager
+                  wave: "4"
+                - component: apigee-org
+                  wave: "5"
+                - component: apigee-env
+                  wave: "6"
+                - component: apigee-virtualhost
+                  wave: "7"
+  template:
+    metadata:
+      name: "apigee-{{ index .metadata.labels \"apigee.dc\" }}-{{ .component }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{ .wave }}"
+      labels:
+        apigee.dc: "{{ index .metadata.labels \"apigee.dc\" }}"
+        apigee.component: "{{ .component }}"
+    spec:
+      project: apigee-hybrid
+      destination:
+        server: "{{ .server }}"
+        namespace: apigee
+      sources:
+        # 1) The Apigee hybrid chart from Google's OCI registry.
+        - repoURL: us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
+          chart: "{{ .component }}"
+          targetRevision: "1.14.1"
+          helm:
+            releaseName: "{{ .component }}"
+            ignoreMissingValueFiles: true
+            valueFiles:
+              - "$values/apigee-hybrid-multidc-dr/clusters/common/{{ .component }}/values.yaml"
+              - "$values/apigee-hybrid-multidc-dr/clusters/{{ index .metadata.labels \"apigee.dc\" }}/{{ .component }}/values.yaml"
+        # 2) This git repo, mounted as $values so the chart above can read it.
+        - repoURL: https://github.com/smaddula862/kong.git
+          targetRevision: claude/apigee-hybrid-multidc-dr-vqwa1u
+          ref: values
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 10m
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+      ignoreDifferences:
+        # Apigee's operator mutates replica counts of some runtime deployments
+        # via its own HPA-like logic; don't let ArgoCD fight it.
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas

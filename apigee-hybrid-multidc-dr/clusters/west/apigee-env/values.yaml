@@ -1,0 +1,10 @@
+# WEST overrides — apigee-env
+# West runs the synchronizer in STANDBY (read/forward) mode. During a DR
+# failover it is promoted to active (see dr-runbook.md, "Failover to West").
+gcp:
+  region: us-west1
+k8sCluster:
+  name: ocp-west
+  region: us-west-1
+
+synchronizerRole: standby

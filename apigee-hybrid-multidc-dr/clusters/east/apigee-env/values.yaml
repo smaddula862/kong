@@ -1,0 +1,11 @@
+# EAST overrides — apigee-env
+# East owns the ACTIVE synchronizer for the org/env (writes deployment state).
+gcp:
+  region: us-east1
+k8sCluster:
+  name: ocp-east
+  region: us-east-1
+
+# forwardProxy / synchronizer active-role marker consumed by the runbook
+# tooling; East = active.
+synchronizerRole: active

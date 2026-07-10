@@ -1,0 +1,7 @@
+# EAST overrides — apigee-operator
+gcp:
+  region: us-east1
+instanceID: "apigee-east"
+k8sCluster:
+  name: ocp-east
+  region: us-east-1

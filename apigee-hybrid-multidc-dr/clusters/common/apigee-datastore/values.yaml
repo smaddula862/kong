@@ -1,0 +1,62 @@
+# -----------------------------------------------------------------------------
+# apigee-datastore (Cassandra) — COMMON values.
+#
+# Cassandra is the heart of the multi-DC DR story. Both East and West run a
+# Cassandra ring in the SAME logical cluster, each as its own Cassandra
+# datacenter (dc-east / dc-west). Keyspaces are replicated with
+# NetworkTopologyStrategy {dc-east: 3, dc-west: 3} so every write in one region
+# is asynchronously replicated to the other. If a whole region is lost, the
+# surviving region still holds a full copy of runtime state (KMS, KVM, quota,
+# OAuth tokens, deployed proxies).
+#
+# Region-specific values (datacenter name, rack, seed host, storage class)
+# are set in clusters/<dc>/apigee-datastore/values.yaml.
+# -----------------------------------------------------------------------------
+gcp:
+  projectID: "my-apigee-project"
+org: "my-apigee-project"
+namespace: apigee
+
+cassandra:
+  # One logical ring spanning both DCs.
+  clusterName: apigee-cassandra
+  # 3 replicas per region -> RF 3 per DC, quorum survivable within a region.
+  replicaCount: 3
+  hostNetwork: false
+  # Protect the datastore from preemption (see openshift/priorityclasses.yaml).
+  priorityClassName: apigee-datastore-critical
+
+  # Authentication between nodes and clients is required for multi-region.
+  auth:
+    secret: apigee-cassandra-auth
+    # Passwords are supplied out-of-band (Sealed Secret / External Secret),
+    # never in git. Default JMX/admin users are enabled for repair tooling.
+
+  # Node-to-node and client TLS — mandatory when Cassandra traffic crosses the
+  # inter-DC link.
+  sslRootCAPath: /opt/apigee/ssl/ca.pem
+  sslCertPath: /opt/apigee/ssl/cert.pem
+  sslKeyPath: /opt/apigee/ssl/key.pem
+
+  resources:
+    requests:
+      cpu: "2"
+      memory: 8Gi
+    limits:
+      memory: 8Gi
+  maxHeapSize: 4096M
+  heapNewSize: 512M
+
+  # Scheduled backups to object storage (per-region bucket). Restores are how a
+  # rebuilt region re-hydrates if it is ever wiped entirely — see dr-runbook.md.
+  backup:
+    enabled: true
+    schedule: "0 */6 * * *"      # every 6h
+    dbStorageBucket: "gs://my-apigee-cassandra-backups"
+    serviceAccountRef: apigee-cassandra-backup-svc-account
+
+  # readiness/liveness tuned for cross-region gossip latency.
+  readinessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 6

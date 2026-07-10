@@ -1,0 +1,25 @@
+# apigee-telemetry (metrics + logs) — COMMON values.
+gcp:
+  projectID: "my-apigee-project"
+org: "my-apigee-project"
+namespace: apigee
+
+metrics:
+  enabled: true
+  # Each region tags its metrics with its own k8s cluster name/region so the
+  # control-plane dashboards can distinguish East vs West health.
+  appStackdriverExporter:
+    resources:
+      requests:
+        cpu: 128m
+        memory: 512Mi
+
+logger:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 500Mi
+
+# GCP service account (workload identity or key) used to ship telemetry.
+serviceAccountRef: apigee-telemetry-svc-account

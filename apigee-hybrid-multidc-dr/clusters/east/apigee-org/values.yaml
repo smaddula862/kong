@@ -1,0 +1,6 @@
+# EAST overrides — apigee-org
+gcp:
+  region: us-east1
+k8sCluster:
+  name: ocp-east
+  region: us-east-1

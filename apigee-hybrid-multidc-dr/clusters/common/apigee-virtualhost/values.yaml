@@ -1,0 +1,18 @@
+# apigee-virtualhost (routing + TLS termination for the ingress) — COMMON.
+gcp:
+  projectID: "my-apigee-project"
+org: "my-apigee-project"
+namespace: apigee
+
+virtualhosts:
+  - name: prod
+    # The public hostname clients call. The SAME hostname resolves (via GSLB /
+    # weighted DNS) to whichever region is active, so failover is transparent
+    # to callers — no client reconfiguration on DR.
+    hostnames:
+      - api.example.com
+    # TLS cert/key delivered as a k8s secret (managed by cert-manager or an
+    # External Secret), identical in both regions.
+    sslSecret: apigee-prod-tls
+    selector:
+      app: apigee-ingress

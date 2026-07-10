@@ -1,0 +1,15 @@
+# EAST overrides — apigee-ingress-manager
+gcp:
+  region: us-east1
+k8sCluster:
+  name: ocp-east
+  region: us-east-1
+
+ingressGateways:
+  - name: apigee-ingress
+    svcType: LoadBalancer
+    svcAnnotations:
+      # East regional load balancer. Its VIP is registered in the global DNS/
+      # GSLB record for api.example.com with an active (higher) weight.
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      external-dns.alpha.kubernetes.io/hostname: api-east.example.com

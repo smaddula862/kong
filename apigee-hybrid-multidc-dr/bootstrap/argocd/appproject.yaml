@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: apigee-hybrid
+  namespace: openshift-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "-20"
+spec:
+  description: >-
+    Apigee hybrid runtime deployed across the East and West OpenShift data
+    centers with cross-region Cassandra replication for disaster recovery.
+  # Source repositories ArgoCD is allowed to pull from for this project.
+  sourceRepos:
+    - "https://github.com/smaddula862/kong.git"
+    - "oci://us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts"
+    - "oci://us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts/*"
+  # Destination clusters/namespaces this project may deploy to.
+  destinations:
+    - name: dc-east
+      namespace: apigee
+      server: https://api.east.ocp.example.com:6443
+    - name: dc-east
+      namespace: apigee-system
+      server: https://api.east.ocp.example.com:6443
+    - name: dc-west
+      namespace: apigee
+      server: https://api.west.ocp.example.com:6443
+    - name: dc-west
+      namespace: apigee-system
+      server: https://api.west.ocp.example.com:6443
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  # DR failovers may need to sync out of business hours; allow all windows but
+  # keep an explicit (empty) deny so it is auditable and easy to tighten.
+  syncWindows:
+    - kind: allow
+      schedule: "* * * * *"
+      duration: 24h
+      applications:
+        - "apigee-*"
+      manualSync: true
+  roles:
+    - name: sre-admin
+      description: SRE operators who run DR failover / failback
+      policies:
+        - p, proj:apigee-hybrid:sre-admin, applications, *, apigee-hybrid/*, allow
+        - p, proj:apigee-hybrid:sre-admin, applications, override, apigee-hybrid/*, allow
+      groups:
+        - apigee-sre

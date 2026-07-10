@@ -1,0 +1,81 @@
+# -----------------------------------------------------------------------------
+# SecurityContextConstraints for Apigee hybrid on OpenShift.
+#
+# OpenShift's default `restricted-v2` SCC forces a random UID and drops
+# capabilities that the Cassandra, Envoy and runtime images expect. Apigee's
+# OpenShift install guide requires an anyuid-style SCC bound to the service
+# accounts the charts create. We define a dedicated SCC (least-privilege
+# relative to `privileged`) and bind it to the apigee namespace SAs.
+# -----------------------------------------------------------------------------
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: apigee-hybrid-scc
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: true
+allowPrivilegedContainer: false
+allowedCapabilities:
+  - NET_BIND_SERVICE     # Envoy / ingress binds :443
+readOnlyRootFilesystem: false
+runAsUser:
+  type: RunAsAny         # Apigee/Cassandra images run as fixed UIDs
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: RunAsAny
+supplementalGroups:
+  type: RunAsAny
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - persistentVolumeClaim
+  - projected
+  - secret
+users: []
+groups: []
+---
+# Grant the SCC to every service account in the apigee namespaces. In practice
+# Apigee creates SAs like apigee-cassandra-default, apigee-mart-<org>-... ; a
+# group binding covers them all without chasing individual SA names.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: apigee-hybrid-scc-use
+rules:
+  - apiGroups: ["security.openshift.io"]
+    resources: ["securitycontextconstraints"]
+    resourceNames: ["apigee-hybrid-scc"]
+    verbs: ["use"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: apigee-hybrid-scc-use
+  namespace: apigee
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: apigee-hybrid-scc-use
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: system:serviceaccounts:apigee
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: apigee-hybrid-scc-use
+  namespace: apigee-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: apigee-hybrid-scc-use
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: system:serviceaccounts:apigee-system

@@ -1,0 +1,6 @@
+# WEST overrides — apigee-virtualhost
+gcp:
+  region: us-west1
+k8sCluster:
+  name: ocp-west
+  region: us-west-1

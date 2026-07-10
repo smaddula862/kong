@@ -1,0 +1,29 @@
+# App-of-apps: point ArgoCD at this single Application and it will pull in the
+# AppProject, the OpenShift prerequisite ApplicationSet and the Apigee hybrid
+# component ApplicationSet. Everything else is declarative from git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apigee-hybrid-root
+  namespace: openshift-gitops
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/smaddula862/kong.git
+    targetRevision: claude/apigee-hybrid-multidc-dr-vqwa1u
+    path: apigee-hybrid-multidc-dr/bootstrap/argocd
+    directory:
+      recurse: false
+      include: "{appproject.yaml,appset-openshift-prereqs.yaml,appset-apigee-hybrid.yaml}"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-gitops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ApplyOutOfSyncOnly=true

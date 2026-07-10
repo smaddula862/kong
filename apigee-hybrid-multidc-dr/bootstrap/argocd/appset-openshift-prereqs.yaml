@@ -1,0 +1,47 @@
+# OpenShift prerequisites for Apigee hybrid: namespaces, SecurityContext-
+# Constraints and the PriorityClasses that the runtime pods rely on. These must
+# converge before any Apigee Helm chart is applied, hence a very negative sync
+# wave. One Application per data center via a cluster generator.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: apigee-openshift-prereqs
+  namespace: openshift-gitops
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            argocd.argoproj.io/secret-type: cluster
+            apigee.dc: "east"
+    - clusters:
+        selector:
+          matchLabels:
+            argocd.argoproj.io/secret-type: cluster
+            apigee.dc: "west"
+  template:
+    metadata:
+      name: "apigee-prereqs-{{ index .metadata.labels \"apigee.dc\" }}"
+      annotations:
+        argocd.argoproj.io/sync-wave: "-10"
+      labels:
+        apigee.dc: "{{ index .metadata.labels \"apigee.dc\" }}"
+    spec:
+      project: apigee-hybrid
+      source:
+        repoURL: https://github.com/smaddula862/kong.git
+        targetRevision: claude/apigee-hybrid-multidc-dr-vqwa1u
+        path: apigee-hybrid-multidc-dr/openshift
+        directory:
+          recurse: true
+      destination:
+        server: "{{ .server }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true

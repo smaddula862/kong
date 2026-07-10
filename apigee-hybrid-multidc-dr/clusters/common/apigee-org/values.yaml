@@ -1,0 +1,25 @@
+# apigee-org (org-scoped runtime: MART, connectAgent, watcher, UDCA) — COMMON.
+gcp:
+  projectID: "my-apigee-project"
+org: "my-apigee-project"
+namespace: apigee
+
+# MART + Apigee Connect let the GCP control plane reach this runtime plane.
+mart:
+  replicaCountMin: 1
+  replicaCountMax: 2
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+connectAgent:
+  replicaCountMin: 1
+  replicaCountMax: 2
+
+# GCP service accounts consumed by the org-scoped components.
+serviceAccountRefs:
+  mart: apigee-mart-svc-account
+  connectAgent: apigee-mart-svc-account
+  udca: apigee-udca-svc-account
+  watcher: apigee-watcher-svc-account

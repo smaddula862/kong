@@ -1,0 +1,17 @@
+# Cassandra must never be evicted ahead of stateless runtime pods, otherwise a
+# node-pressure event in one DC can cost a replica and weaken the DR posture.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: apigee-datastore-critical
+value: 1000000
+globalDefault: false
+description: "Apigee Cassandra datastore - protect against preemption/eviction."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: apigee-runtime-high
+value: 100000
+globalDefault: false
+description: "Apigee stateless runtime (MP, MART, ingress)."

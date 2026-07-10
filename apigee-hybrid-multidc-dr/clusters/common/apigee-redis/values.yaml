@@ -1,0 +1,22 @@
+# apigee-redis (quota + PDX cache) — COMMON values.
+# Redis is region-local: each DC keeps its own cache. It is NOT replicated
+# cross-region because it holds only ephemeral quota/rate-limit counters that
+# are rebuilt on failover. This is intentional for the DR design.
+gcp:
+  projectID: "my-apigee-project"
+org: "my-apigee-project"
+namespace: apigee
+
+redis:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  envoy:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi

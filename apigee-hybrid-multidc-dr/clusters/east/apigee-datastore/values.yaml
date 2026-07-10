@@ -1,0 +1,30 @@
+# -----------------------------------------------------------------------------
+# EAST overrides — apigee-datastore (Cassandra)
+#
+# East is the SEED region (bootstrapped first). Its Cassandra pods advertise
+# themselves as datacenter "dc-east". When West is brought up it joins THIS
+# ring by pointing its multiRegionSeedHost at an East seed pod's IP/hostname.
+# -----------------------------------------------------------------------------
+gcp:
+  region: us-east1
+k8sCluster:
+  name: ocp-east
+  region: us-east-1
+
+cassandra:
+  # Cassandra logical datacenter + rack for this region.
+  datacenter: dc-east
+  rack: ra-1
+
+  # East is the first region up, so it self-seeds. Leave multiRegionSeedHost
+  # UNSET here. (West sets it to an East seed address — see west values.)
+  # multiRegionSeedHost: ""
+
+  # OpenShift Data Foundation / block storage class available in this cluster.
+  storage:
+    storageClass: ocs-storagecluster-ceph-rbd
+    capacity: 500Gi
+
+  # Pin Cassandra pods across AZs in the East region for rack awareness.
+  nodeSelector:
+    topology.kubernetes.io/region: us-east-1

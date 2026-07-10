@@ -1,0 +1,21 @@
+# Common values shared by BOTH data centers for the apigee-operator chart.
+# Per-DC overrides live in clusters/<dc>/apigee-operator/values.yaml.
+
+# GCP project that backs the Apigee organization (control plane).
+gcp:
+  projectID: "my-apigee-project"
+
+# Apigee organization name (usually == projectID).
+org: "my-apigee-project"
+
+# Namespace the operator and CRDs are installed into.
+namespace: apigee
+
+# Watcher/operator resource footprint.
+watcher:
+  replicaCountMin: 1
+  replicaCountMax: 2
+
+# Image pull configuration (mirror into a registry your OpenShift nodes trust,
+# e.g. an internal Quay, if egress to gcr.io is restricted).
+imagePullSecrets: []

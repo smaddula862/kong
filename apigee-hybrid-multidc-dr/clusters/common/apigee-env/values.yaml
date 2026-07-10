@@ -1,0 +1,26 @@
+# apigee-env (per-environment runtime: Message Processors + Synchronizer) — COMMON.
+# Deploys the "prod" environment. Add more blocks / value files per environment
+# as needed; both DCs run an identical set of environments so either region can
+# serve the full API surface during a failover.
+gcp:
+  projectID: "my-apigee-project"
+org: "my-apigee-project"
+namespace: apigee
+
+envs:
+  - name: prod
+    # Only ONE region should own the synchronizer "active" role at a time to
+    # avoid duplicate control-plane sync; set per-DC (east=active by default).
+    serviceAccountRefs:
+      synchronizer: apigee-synchronizer-svc-account
+      runtime: apigee-runtime-svc-account
+      udca: apigee-udca-svc-account
+    runtime:
+      replicaCountMin: 2
+      replicaCountMax: 10
+      resources:
+        requests:
+          cpu: "1"
+          memory: 1Gi
+        limits:
+          memory: 2Gi
