@@ -1,0 +1,37 @@
+## Step 11 — apigee-env (one per environment). Doc convention:
+## `helm upgrade $ENV_NAME apigee-env/ --set env=$ENV_NAME`.
+## Replace ENV_NAME in both the releaseName and the `env` parameter. For multiple
+## environments, copy this file (81-, 82-, …) — one Application per env.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apigee-env-dev
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "60"
+spec:
+  project: apigee-hybrid
+  sources:
+    - repoURL: us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
+      chart: apigee-env
+      targetRevision: "1.16.1"
+      helm:
+        releaseName: ENV_NAME         # <-- replace with your env name
+        parameters:
+          - name: env
+            value: ENV_NAME           # <-- replace with your env name
+        valueFiles:
+          - $values/apigee-hybrid-gitops/base/overrides/overrides.yaml
+    - repoURL: https://github.com/smaddula862/kong.git
+      targetRevision: claude/apigee-hybrid-openshift-argocd-m1kdih
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apigee
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=false

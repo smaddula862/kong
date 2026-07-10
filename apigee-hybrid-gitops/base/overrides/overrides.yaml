@@ -1,0 +1,100 @@
+## ============================================================================
+## Apigee hybrid v1.16 — overrides (Helm values), OpenShift + enterprise.
+## This single file is consumed by every apigee-* Application as the Helm values
+## source (Argo CD multi-source: chart from OCI + this file from Git).
+##
+## Replace every ALL_CAPS placeholder. Secrets are referenced by name, never
+## inlined — deliver them via base/overrides/secrets/.
+## Docs: https://docs.cloud.google.com/apigee/docs/hybrid/v1.16/install-create-overrides
+## ============================================================================
+
+# --- Identity / control plane -------------------------------------------------
+org: "ORG_NAME"                     # Apigee org (usually == PROJECT_ID)
+instanceID: "UNIQUE_INSTANCE_ID"    # any stable unique id for this cluster instance
+namespace: apigee
+
+gcp:
+  projectID: "PROJECT_ID"
+  region: "ANALYTICS_REGION"        # e.g. us-central1 (analytics region)
+
+k8sCluster:
+  name: "CLUSTER_NAME"              # OpenShift cluster name
+  region: "CLUSTER_REGION"          # e.g. us-central1
+
+# --- Enterprise: private image registry mirror --------------------------------
+# All Apigee component images resolve under `hub`. Point at your internal mirror.
+hub: "registry.internal.example.com/apigee"
+imagePullSecrets:
+  - name: apigee-registry-pull      # dockerconfigjson Secret in the apigee namespace
+
+# --- Ingress ------------------------------------------------------------------
+# On OpenShift you typically expose the Apigee ingress gateway via a Route or an
+# external LB. svcType ClusterIP keeps it internal and lets an OpenShift Route
+# (see docs/INSTALL.md, Part 3) terminate/expose it.
+ingressGateways:
+  - name: apigee-ingress
+    replicaCountMin: 2
+    replicaCountMax: 4
+    svcType: ClusterIP
+
+# --- Cassandra (datastore) ----------------------------------------------------
+cassandra:
+  hostNetwork: false                # must be false on OpenShift/most managed platforms
+  replicaCount: 3                   # 3 (single region non-prod). Production: multiple of 3.
+  storage:
+    storageClass: "STORAGE_CLASS"   # e.g. ocs-storagecluster-ceph-rbd (RWO, allowVolumeExpansion)
+    capacity: 500Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 4Gi
+  # Cassandra auth — password delivered via secret, not inlined.
+  auth:
+    secret: apigee-cassandra-auth   # keys: adminPassword, ddlPassword, dmlPassword, jmxUsername, jmxPassword
+  # Backup (optional, production): uses apigee-cassandra SA + a GCS bucket.
+
+# --- Telemetry (metrics / logs / trace) --------------------------------------
+metrics:
+  enabled: true
+logger:
+  enabled: false                    # enable if you ship container logs to Cloud Logging
+
+# --- Runtime environment(s) ---------------------------------------------------
+envs:
+  - name: "ENV_NAME"
+    # Per-component SA keys are delivered as Secrets (recommended) instead of
+    # serviceAccountPaths pointing at files. Use *SecretProviderClass or the
+    # *Secret keys supported by the chart:
+    serviceAccountSecretProviderClass: ""   # if using CSI secret store; else use secrets below
+    synchronizerSecret: apigee-synchronizer-svc-account
+    udcaSecret: apigee-udca-svc-account
+    runtimeSecret: apigee-runtime-svc-account
+
+# --- Virtualhost / environment group -----------------------------------------
+virtualhosts:
+  - name: "ENV_GROUP"
+    # TLS delivered as a k8s tls Secret (tls.crt / tls.key) for the group hostname.
+    sslSecret: apigee-ingress-tls
+    # additionalGateways: [apigee-ingress]
+
+# --- Org-level service accounts ----------------------------------------------
+mart:
+  serviceAccountSecret: apigee-mart-svc-account
+connectAgent:
+  serviceAccountSecret: apigee-mart-svc-account
+watcher:
+  serviceAccountSecret: apigee-watcher-svc-account
+metrics_sa:
+  serviceAccountSecret: apigee-metrics-svc-account
+
+# --- Operator / guardrails (v1.16) -------------------------------------------
+# apigee-guardrails SA is required by the operator chart in v1.16.
+guardrails:
+  serviceAccountSecret: apigee-guardrails-svc-account
+
+# --- Enterprise: forward proxy (uncomment if egress is via a proxy) -----------
+# ao:
+#   args:
+#     env:
+#       - name: HTTPS_PROXY
+#         value: "http://proxy.internal.example.com:3128"

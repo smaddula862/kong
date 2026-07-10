@@ -1,0 +1,40 @@
+## Step 10 (CRDs) + Step 11 (operator). The apigee-operator chart installs the
+## Apigee CRDs and the controller. ServerSideApply satisfies the guide's
+## requirement to install CRDs with `kubectl apply --server-side` (the CRDs are
+## large and exceed the client-side apply annotation limit).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apigee-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: apigee-hybrid
+  sources:
+    - repoURL: us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
+      chart: apigee-operator
+      targetRevision: "1.16.1"
+      helm:
+        releaseName: operator
+        valueFiles:
+          - $values/apigee-hybrid-gitops/base/overrides/overrides.yaml
+    - repoURL: https://github.com/smaddula862/kong.git
+      targetRevision: claude/apigee-hybrid-openshift-argocd-m1kdih
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apigee-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true      # required for the large Apigee CRDs
+      - CreateNamespace=false
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m

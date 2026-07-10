@@ -1,0 +1,60 @@
+## Restricted Argo CD AppProject for Apigee hybrid.
+## Enterprise guardrail: sources, destinations and cluster-scoped kinds are all
+## explicitly whitelisted. App teams get no cluster-admin; Argo CD stays in-lane.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: apigee-hybrid
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Apigee hybrid v1.16 runtime plane on OpenShift (GitOps)
+
+  # Only this Git repo and the Apigee OCI Helm registry may be sources.
+  sourceRepos:
+    - https://github.com/smaddula862/kong.git
+    - us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
+    # cert-manager upstream chart (or mirror it and replace this entry):
+    - https://charts.jetstack.io
+
+  # Only these namespaces on the local cluster may be targeted.
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: apigee
+    - server: https://kubernetes.default.svc
+      namespace: apigee-system
+    - server: https://kubernetes.default.svc
+      namespace: cert-manager
+
+  # Cluster-scoped resources the install legitimately needs (CRDs + OpenShift SCC
+  # + the ClusterRoles/Bindings that grant the SCC). Nothing else is permitted.
+  clusterResourceWhitelist:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: security.openshift.io
+      kind: SecurityContextConstraints
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: ""
+      kind: Namespace
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+
+  # Everything namespaced is allowed inside the whitelisted destinations.
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Optional: who may sync/override. Tighten to your platform team groups.
+  roles:
+    - name: apigee-platform-admin
+      description: Full manage of Apigee hybrid applications
+      policies:
+        - p, proj:apigee-hybrid:apigee-platform-admin, applications, *, apigee-hybrid/*, allow
+      groups:
+        - apigee-platform-admins

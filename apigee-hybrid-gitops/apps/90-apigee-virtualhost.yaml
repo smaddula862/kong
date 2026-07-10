@@ -1,0 +1,36 @@
+## Step 11 — apigee-virtualhost (one per environment group). Doc convention:
+## `helm upgrade $ENV_GROUP apigee-virtualhost/ --set envgroup=$ENV_GROUP`.
+## Replace ENV_GROUP in both the releaseName and the `envgroup` parameter.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apigee-virtualhost-dev-group
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "70"
+spec:
+  project: apigee-hybrid
+  sources:
+    - repoURL: us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
+      chart: apigee-virtualhost
+      targetRevision: "1.16.1"
+      helm:
+        releaseName: ENV_GROUP        # <-- replace with your env group name
+        parameters:
+          - name: envgroup
+            value: ENV_GROUP          # <-- replace with your env group name
+        valueFiles:
+          - $values/apigee-hybrid-gitops/base/overrides/overrides.yaml
+    - repoURL: https://github.com/smaddula862/kong.git
+      targetRevision: claude/apigee-hybrid-openshift-argocd-m1kdih
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apigee
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=false

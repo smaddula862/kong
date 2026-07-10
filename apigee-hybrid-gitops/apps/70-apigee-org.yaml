@@ -1,0 +1,32 @@
+## Step 11 — apigee-org. Release name should match your org (doc convention:
+## `helm upgrade $ORG_NAME apigee-org/`). Replace `ORG_NAME` below with the org.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apigee-org
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "50"
+spec:
+  project: apigee-hybrid
+  sources:
+    - repoURL: us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
+      chart: apigee-org
+      targetRevision: "1.16.1"
+      helm:
+        releaseName: ORG_NAME        # <-- replace with your Apigee org name
+        valueFiles:
+          - $values/apigee-hybrid-gitops/base/overrides/overrides.yaml
+    - repoURL: https://github.com/smaddula862/kong.git
+      targetRevision: claude/apigee-hybrid-openshift-argocd-m1kdih
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apigee
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=false

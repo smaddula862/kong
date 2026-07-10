@@ -1,0 +1,38 @@
+## Step 11 — apigee-datastore (Cassandra). Prune is disabled to protect PVCs;
+## deleting this Application must never delete the datastore volumes.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apigee-datastore
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: apigee-hybrid
+  sources:
+    - repoURL: us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
+      chart: apigee-datastore
+      targetRevision: "1.16.1"
+      helm:
+        releaseName: datastore
+        valueFiles:
+          - $values/apigee-hybrid-gitops/base/overrides/overrides.yaml
+    - repoURL: https://github.com/smaddula862/kong.git
+      targetRevision: claude/apigee-hybrid-openshift-argocd-m1kdih
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apigee
+  syncPolicy:
+    automated:
+      prune: false               # protect Cassandra PVCs from accidental pruning
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=false
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m

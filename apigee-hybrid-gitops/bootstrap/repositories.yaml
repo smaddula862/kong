@@ -1,0 +1,48 @@
+## Repository / registry credential templates for Argo CD.
+## Apply into the argocd namespace. Replace placeholder credentials via your
+## secret mechanism (Sealed Secrets / ESO) — do NOT commit real tokens.
+##
+## NOTE: the Apigee Helm charts are OCI artifacts, so the repo must set
+## enableOCI: "true" and type: helm.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: apigee-helm-oci
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: apigee-hybrid-helm-charts
+  type: helm
+  url: us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
+  enableOCI: "true"
+  # Public read; if you mirror into a private registry, add username/password here
+  # (e.g. an oauth2accesstoken or a robot account for your internal registry).
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: apigee-gitops-repo
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: apigee-hybrid-gitops
+  type: git
+  url: https://github.com/smaddula862/kong.git
+  # For a private repo, reference a token/ssh key delivered by your secret store:
+  # username: <git-user>
+  # password: <token>   # inject via Sealed Secret / ESO
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jetstack-charts
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+stringData:
+  name: jetstack
+  type: helm
+  url: https://charts.jetstack.io

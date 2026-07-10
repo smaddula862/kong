@@ -1,0 +1,31 @@
+## Step 11 — apigee-ingress-manager (manages the Apigee ingress gateway).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apigee-ingress-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "40"
+spec:
+  project: apigee-hybrid
+  sources:
+    - repoURL: us-docker.pkg.dev/apigee-release/apigee-hybrid-helm-charts
+      chart: apigee-ingress-manager
+      targetRevision: "1.16.1"
+      helm:
+        releaseName: ingress-manager
+        valueFiles:
+          - $values/apigee-hybrid-gitops/base/overrides/overrides.yaml
+    - repoURL: https://github.com/smaddula862/kong.git
+      targetRevision: claude/apigee-hybrid-openshift-argocd-m1kdih
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: apigee
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=false

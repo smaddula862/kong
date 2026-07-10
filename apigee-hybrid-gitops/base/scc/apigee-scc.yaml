@@ -1,0 +1,49 @@
+## Purpose-built OpenShift SecurityContextConstraints for Apigee hybrid.
+## Least-privilege: NOT privileged, NO allowPrivilegeEscalation, NO host access.
+## Modeled on `nonroot-v2` but permits the specific fsGroup/supplemental groups
+## the Cassandra (datastore) and telemetry images need for their data volumes.
+## Bound ONLY to Apigee service accounts (see scc-bindings.yaml) so the rest of
+## the cluster stays on restricted-v2.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: apigee-scc
+  annotations:
+    kubernetes.io/description: >-
+      Least-privilege SCC for Apigee hybrid runtime. Allows required volume types
+      and non-root UIDs from the project range; forbids privilege escalation,
+      host namespaces, and privileged containers.
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+readOnlyRootFilesystem: false
+defaultAddCapabilities: null
+requiredDropCapabilities:
+  - ALL
+allowedCapabilities: null
+runAsUser:
+  # Use the namespace's pre-allocated UID range (OpenShift assigns it).
+  type: MustRunAsRange
+seLinuxContext:
+  type: MustRunAs
+fsGroup:
+  type: RunAsAny          # Cassandra needs to chown its PV data dir
+supplementalGroups:
+  type: RunAsAny
+seccompProfiles:
+  - runtime/default
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - ephemeral
+  - persistentVolumeClaim
+  - projected
+  - secret
+groups: []
+users: []
+priority: 10

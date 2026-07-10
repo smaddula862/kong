@@ -1,0 +1,29 @@
+## App-of-apps root. Points Argo CD at apps/, which contains one child
+## Application per install step. Sync waves on the children enforce the
+## documented Apigee component order.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apigee-hybrid-root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: apigee-hybrid
+  source:
+    repoURL: https://github.com/smaddula862/kong.git
+    targetRevision: claude/apigee-hybrid-openshift-argocd-m1kdih
+    path: apigee-hybrid-gitops/apps
+    directory:
+      recurse: false
+      include: '*.yaml'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - ApplyOutOfSyncOnly=true

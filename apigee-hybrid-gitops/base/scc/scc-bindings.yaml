@@ -1,0 +1,46 @@
+## Grants the apigee-scc ONLY to service accounts in the apigee / apigee-system
+## namespaces. A ClusterRole exposes `use` on the SCC; namespaced RoleBindings
+## scope it to just those two namespaces (not cluster-wide anyuid).
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: apigee-use-scc
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    resourceNames:
+      - apigee-scc
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: apigee-use-scc
+  namespace: apigee
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: apigee-use-scc
+subjects:
+  # All Apigee runtime pods in the apigee namespace run under their own SAs.
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: system:serviceaccounts:apigee
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: apigee-use-scc
+  namespace: apigee-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: apigee-use-scc
+subjects:
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: system:serviceaccounts:apigee-system

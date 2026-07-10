@@ -1,0 +1,35 @@
+## Step 9 — Install cert-manager (v1.16.3+ / 1.17.2+ required for hybrid v1.16).
+## Uses the upstream jetstack chart with CRDs. On a fully restricted cluster you
+## may instead install the "cert-manager Operator for Red Hat OpenShift" via OLM;
+## if so, replace this Application with a Subscription manifest and drop the repo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  project: apigee-hybrid
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.17.2
+    helm:
+      releaseName: cert-manager
+      values: |
+        installCRDs: true
+        # keep cert-manager off host network / privileged; defaults are fine on OCP
+        global:
+          leaderElection:
+            namespace: cert-manager
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
