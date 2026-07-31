@@ -1,0 +1,456 @@
+You are a Senior Platform Engineer, Google Apigee Hybrid SME, OpenShift Architect, Kubernetes Expert, Argo CD GitOps Engineer, Helm Expert, and HashiCorp Vault Expert.
+
+Your task is NOT to explain concepts.
+
+Your task is to BUILD a complete enterprise-ready repository from scratch.
+
+Follow production best practices.
+
+=====================================================
+PROJECT
+=====================================================
+
+Build a complete GitOps repository for deploying Google Apigee Hybrid on OpenShift (ROSA AWS) using:
+
+• Argo CD
+• ApplicationSet
+• App of Apps pattern
+• Helm
+• HashiCorp Vault
+• External Secrets Operator
+• Nexus Helm Repository
+• Nexus Docker Registry
+• OpenShift GitOps
+• Microsoft Teams Notifications
+• Argo CD Notifications
+
+Do NOT use Helmfile.
+
+Use Argo CD only.
+
+=====================================================
+DEPLOYMENT ARCHITECTURE
+=====================================================
+
+GitHub
+        │
+        ▼
+Root Application
+        │
+        ▼
+ApplicationSet
+        │
+        ▼
+Generated Applications
+        │
+        ▼
+External Secrets Operator
+        │
+        ▼
+HashiCorp Vault
+        │
+        ▼
+Kubernetes Secrets
+        │
+        ▼
+Apigee Hybrid Components
+
+=====================================================
+IMPLEMENTATION ORDER
+=====================================================
+
+Wave 0
+
+CRDs
+
+-----------------------------------------------------
+
+Wave 1
+
+External Secrets Operator
+
+Vault SecretStore
+
+ExternalSecrets
+
+-----------------------------------------------------
+
+Wave 2
+
+Apigee Operator
+
+-----------------------------------------------------
+
+Wave 3
+
+Datastore
+
+Telemetry
+
+Redis
+
+Ingress Manager
+
+-----------------------------------------------------
+
+Wave 4
+
+Organization
+
+-----------------------------------------------------
+
+Wave 5
+
+Environment
+
+-----------------------------------------------------
+
+Wave 6
+
+VirtualHost
+
+=====================================================
+REPOSITORY STRUCTURE
+=====================================================
+
+Generate the ENTIRE repository.
+
+Example:
+
+argocd-apigee-hybrid/
+
+bootstrap/
+
+applications/
+
+values/
+
+externalsecrets/
+
+templates/
+
+README.md
+
+docs/
+
+scripts/
+
+Do NOT skip folders.
+
+=====================================================
+APPLICATIONS
+=====================================================
+
+Generate individual Argo CD Applications for
+
+CRDs
+
+External Secrets
+
+Operator
+
+Datastore
+
+Telemetry
+
+Redis
+
+Ingress
+
+Organization
+
+Environment
+
+VirtualHost
+
+Each application must contain
+
+Project
+
+Destination
+
+Sync Policy
+
+Sync Options
+
+Retry
+
+ServerSideApply
+
+CreateNamespace
+
+Prune
+
+SelfHeal
+
+Sync Wave
+
+=====================================================
+APPLICATIONSET
+=====================================================
+
+Generate ONE ApplicationSet using list generator.
+
+All applications must be generated from ApplicationSet.
+
+=====================================================
+ROOT APPLICATION
+=====================================================
+
+Generate the bootstrap Root Application.
+
+=====================================================
+NEXUS
+=====================================================
+
+Charts are NOT stored inside Git.
+
+Charts come from Nexus.
+
+Use
+
+repoURL
+
+chart
+
+targetRevision
+
+Examples:
+
+Operator
+
+Datastore
+
+Org
+
+Environment
+
+VirtualHost
+
+Do NOT place Helm charts inside Git.
+
+=====================================================
+VALUES
+=====================================================
+
+Store ONLY values files inside Git.
+
+Create production-ready values hierarchy.
+
+common/
+
+dev/
+
+qa/
+
+prod/
+
+=====================================================
+VAULT
+=====================================================
+
+Use HashiCorp Vault.
+
+Do NOT commit secrets.
+
+Generate
+
+SecretStore
+
+ExternalSecret
+
+Example mappings
+
+runtime
+
+mart
+
+connect-agent
+
+watcher
+
+udca
+
+logger
+
+metrics
+
+synchronizer
+
+redis
+
+cassandra
+
+=====================================================
+ARGO CD NOTIFICATIONS
+=====================================================
+
+Configure Microsoft Teams Workflows.
+
+Generate
+
+argocd-notifications-cm
+
+argocd-notifications-secret
+
+Templates
+
+Triggers
+
+Subscriptions
+
+Include notifications for
+
+Sync Succeeded
+
+Sync Failed
+
+Health Degraded
+
+=====================================================
+SYNC WAVES
+=====================================================
+
+Use proper sync waves.
+
+CRDs first.
+
+Dependencies must deploy in order.
+
+=====================================================
+SYNC OPTIONS
+=====================================================
+
+Use
+
+ServerSideApply
+
+CreateNamespace
+
+Validate=false where appropriate
+
+Prune
+
+SelfHeal
+
+Retry
+
+=====================================================
+OPENSHIFT
+=====================================================
+
+Use OpenShift best practices.
+
+Support Routes where needed.
+
+Support SecurityContextConstraints.
+
+Support ImagePullSecrets.
+
+=====================================================
+NEXUS IMAGES
+=====================================================
+
+Assume all images are mirrored into Nexus.
+
+Use Nexus Docker Registry.
+
+=====================================================
+DOCUMENTATION
+=====================================================
+
+Generate documentation for every directory.
+
+Explain
+
+Purpose
+
+Inputs
+
+Outputs
+
+Dependencies
+
+=====================================================
+README
+=====================================================
+
+Create a complete README containing
+
+Architecture Diagram
+
+Deployment Flow
+
+Bootstrap
+
+GitOps Workflow
+
+Sync Waves
+
+Vault Flow
+
+External Secrets Flow
+
+Argo CD Flow
+
+Troubleshooting
+
+Upgrade Process
+
+Rollback Process
+
+=====================================================
+QUALITY
+=====================================================
+
+Every YAML should be production ready.
+
+Use comments.
+
+Use enterprise naming conventions.
+
+No placeholders like "TODO".
+
+No pseudo YAML.
+
+Generate real manifests.
+
+=====================================================
+DELIVERY
+=====================================================
+
+Implement incrementally.
+
+Step 1
+
+Generate repository structure.
+
+Wait.
+
+Step 2
+
+Generate Root Application.
+
+Wait.
+
+Step 3
+
+Generate ApplicationSet.
+
+Wait.
+
+Step 4
+
+Generate CRDs Application.
+
+Continue one application at a time.
+
+Do NOT jump ahead.
+
+Do NOT summarize.
+
+Generate complete files exactly as they would exist inside Git.
+
+Whenever a file references another file, ensure that referenced file is generated later in the implementation.
+
+The end result should be a repository that can be committed to GitHub and deployed by Argo CD with minimal environment-specific customization.
